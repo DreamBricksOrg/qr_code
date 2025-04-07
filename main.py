@@ -1,5 +1,15 @@
 import os
 import logging
+try:
+    import RPi.GPIO as GPIO
+except ImportError:
+    GPIO = None
+
+MACHINE_COMMAND = 11 # Número do pino GPIO para o comando da máquina
+COMMAND_DURATION = 2  # Tempo em segundos para o comando ser executado
+
+if GPIO:  # Verifica se a biblioteca RPi.GPIO está disponível para evitar erros em sistemas não-Raspberry Pi
+    GPIO.setmode(GPIO.BOARD)
 
 # Configuração básica do logger
 logging.basicConfig(
