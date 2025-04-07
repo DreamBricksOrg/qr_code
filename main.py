@@ -1,5 +1,6 @@
 import os
 import logging
+import time
 try:
     import RPi.GPIO as GPIO
 except ImportError:
@@ -10,6 +11,7 @@ COMMAND_DURATION = 2  # Tempo em segundos para o comando ser executado
 
 if GPIO:  # Verifica se a biblioteca RPi.GPIO está disponível para evitar erros em sistemas não-Raspberry Pi
     GPIO.setmode(GPIO.BOARD)
+    GPIO.setup(MACHINE_COMMAND, GPIO.OUT)
 
 # Configuração básica do logger
 logging.basicConfig(
@@ -22,6 +24,14 @@ logger = logging.getLogger()
 
 VALID_FILE = "list_valids.txt"
 USED_FILE = "list_useds.txt"
+
+def start_game():
+    if GPIO:
+        GPIO.output(MACHINE_COMMAND, GPIO.HIGH)
+        time.sleep(COMMAND_DURATION)  # Aguarda o tempo definido para o comando
+        GPIO.output(MACHINE_COMMAND, GPIO.LOW)
+    else:
+        logger.warning("GPIO não disponível. Comando não enviado.")
 
 def read_list(path):
     if not os.path.exists(path):
@@ -44,6 +54,7 @@ def process_code(code):
         useds.append(code)
         save_list(VALID_FILE, valids)
         save_list(USED_FILE, useds)
+        start_game()
     elif code in useds:
         logger.warning(f"Código {code} já foi usado.")
 
