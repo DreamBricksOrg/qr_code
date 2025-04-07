@@ -1,6 +1,8 @@
 import os
 import logging
 import time
+import threading
+from pathlib import Path
 try:
     import RPi.GPIO as GPIO
 except ImportError:
@@ -8,6 +10,17 @@ except ImportError:
 
 MACHINE_COMMAND = 11 # Número do pino GPIO para o comando da máquina
 COMMAND_DURATION = 2  # Tempo em segundos para o comando ser executado
+USB_PATHS = [
+    "/media/pi",
+    "/mnt/usb",
+    "/mnt/d",
+    "/mnt/e",
+    "/mnt/f",
+    "/mnt/g",
+    "/mnt/h"
+]
+VALID_FILE = "list_valids.txt"
+USED_FILE = "list_useds.txt"
 
 if GPIO:  # Verifica se a biblioteca RPi.GPIO está disponível para evitar erros em sistemas não-Raspberry Pi
     GPIO.setmode(GPIO.BOARD)
@@ -21,9 +34,6 @@ logging.basicConfig(
     datefmt='%Y-%m-%d %H:%M:%S'
 )
 logger = logging.getLogger()
-
-VALID_FILE = "list_valids.txt"
-USED_FILE = "list_useds.txt"
 
 def start_game():
     if GPIO:
@@ -61,29 +71,6 @@ def process_code(code):
     else:
         logger.error(f"Código {code} inválido.")
 
-def usb_new_list():
-    mounts = [
-        "/media/pi",
-        "/mnt/usb",
-        "/mnt/e",
-        "/mnt/f",
-        "/mnt/d"
-    ]
-
-    for base in mounts:
-        if not os.path.exists(base):
-            continue
-        for device in os.listdir(base):
-            path = os.path.join(base, device, "new_codes.txt")
-            if os.path.isfile(path):  # WSL pode não tratar como pasta
-                process_new_list(path)
-                return
-
-            new_path = os.path.join(base, "new_codes.txt")
-            if os.path.isfile(new_path):
-                process_new_list(new_path)
-                return
-
 def process_new_list(path):
     with open(path, "r") as f:
         new_codes = [line.strip() for line in f if line.strip()]
@@ -94,14 +81,33 @@ def process_new_list(path):
         save_list(VALID_FILE, updateds)
         os.remove(path)
 
+def usb_monitor():
+    logger.info("Monitor de USB iniciado.")
+    while True:
+        try:
+            for base in USB_PATHS:
+                path = Path(base)
+                if not path.exists():
+                    continue
+                try:
+                    for item in path.iterdir():
+                        if item.name == "new_codes.txt" and item.is_file():
+                            logger.info(f"Arquivo detectado: {item}")
+                            process_new_list(str(item))
+                except Exception as e:
+                    logger.warning(f"Erro acessando {base}: {e}")
+            time.sleep(10)
+        except Exception as e:
+            logger.error(f"Erro no monitor de USB: {e}")
+            time.sleep(10)
+
 def main():
     logger.info("Sistema iniciado. Aguardando QR Codes...")
     print("\nInciando...")
     while True:
         try:
-            # usb_new_list()  # Verifica se há nova lista no pen drive
-            code = input().strip()
-            # print(f"\nCode: {code}")
+            code = input("Digite ou escaneie o código: ").strip()
+            print(f"\nCode: {code}")
             process_code(code)
         except KeyboardInterrupt:
             logger.info("Sistema finalizado manualmente.")
@@ -111,4 +117,5 @@ def main():
             logger.error(f"Erro inesperado no loop principal: {e}")
 
 if __name__ == "__main__":
+    threading.Thread(target=usb_monitor, daemon=True).start() # Inicia o monitoramento do USB em paralelo
     main()
