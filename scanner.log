@@ -38,3 +38,17 @@
 2025-04-07 15:37:18 [INFO] Adicionando 3 itens da nova lista.
 2025-04-07 15:37:58 [INFO] Arquivo detectado: /mnt/g/new_codes.txt
 2025-04-07 15:37:58 [INFO] Adicionando 3 itens da nova lista.
+2025-04-07 16:54:12 [INFO] Sistema finalizado manualmente.
+2025-04-07 16:54:14 [INFO] Monitor de USB iniciado.
+2025-04-07 16:54:14 [INFO] Sistema iniciado. Aguardando QR Codes...
+2025-04-07 16:54:54 [INFO] Arquivo detectado: /mnt/g/new_codes.txt
+2025-04-07 16:54:54 [INFO] Adicionando 1000 itens da nova lista.
+2025-04-07 16:55:18 [INFO] Código 577148847740235 válido.
+2025-04-07 16:55:18 [WARNING] GPIO não disponível. Comando não enviado.
+2025-04-07 16:56:57 [INFO] Sistema finalizado manualmente.
+2025-04-07 16:56:58 [INFO] Monitor de USB iniciado.
+2025-04-07 16:56:58 [INFO] Sistema iniciado. Aguardando QR Codes...
+2025-04-07 16:57:11 [INFO] Código 921264983374039 válido.
+2025-04-07 16:57:11 [WARNING] GPIO não disponível. Comando não enviado.
+2025-04-07 16:57:21 [ERROR] Código 921264983374038 inválido por verificação.
+2025-04-07 16:57:32 [ERROR] Código 921264983374038 inválido por verificação.

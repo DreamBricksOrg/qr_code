@@ -63,6 +63,10 @@ def validate_code(code):
     return checksum == checksum_digit
 
 def process_code(code):
+    if not validate_code(code):
+        logger.error(f"Código {code} inválido por verificação.")
+        return
+
     valids = read_list(VALID_FILE)
     useds = read_list(USED_FILE)
 
@@ -73,11 +77,12 @@ def process_code(code):
         save_list(VALID_FILE, valids)
         save_list(USED_FILE, useds)
         start_game()
+
     elif code in useds:
         logger.warning(f"Código {code} já foi usado.")
 
     else:
-        logger.error(f"Código {code} inválido.")
+        logger.error(f"Código {code} não encontrado nas listas.")
 
 def process_new_list(path):
     with open(path, "r") as f:
