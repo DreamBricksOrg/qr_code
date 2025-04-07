@@ -54,6 +54,14 @@ def save_list(path, data_list):
         for item in data_list:
             f.write(item + "\n")
 
+def validate_code(code):
+    if not code.isdigit() or len(code) != 15:
+        return False
+    base_digits = list(map(int, code[:14]))
+    checksum_digit = int(code[-1])
+    checksum = sum((i + 1) * num for i, num in enumerate(base_digits)) % 10
+    return checksum == checksum_digit
+
 def process_code(code):
     valids = read_list(VALID_FILE)
     useds = read_list(USED_FILE)
