@@ -70,16 +70,16 @@ def process_code(code):
     valids = read_list(VALID_FILE)
     useds = read_list(USED_FILE)
 
-    if code in valids:
+    if code in useds:
+        logger.warning(f"Código {code} já foi usado.")
+
+    elif code in valids:
         logger.info(f"Código {code} válido.")
         valids.remove(code)
         useds.append(code)
         save_list(VALID_FILE, valids)
         save_list(USED_FILE, useds)
         start_game()
-
-    elif code in useds:
-        logger.warning(f"Código {code} já foi usado.")
 
     else:
         logger.error(f"Código {code} não encontrado nas listas.")
