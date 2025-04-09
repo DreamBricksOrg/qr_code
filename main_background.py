@@ -3,6 +3,8 @@ import logging
 import time
 import threading
 from pathlib import Path
+import csv
+from datetime import datetime
 
 try:
     import RPi.GPIO as GPIO
@@ -17,6 +19,7 @@ COMMAND_DURATION = 2
 USB_PATHS = ["/media/pi", "/mnt/usb", "/mnt/d", "/mnt/e", "/mnt/f", "/mnt/g", "/mnt/h"]
 VALID_FILE = "list_valids.txt"
 USED_FILE = "list_useds.txt"
+CSV_LOG_FILE = "scanned_codes.csv"
 
 if GPIO:
     GPIO.setmode(GPIO.BCM)
@@ -29,6 +32,18 @@ logging.basicConfig(
     datefmt='%Y-%m-%d %H:%M:%S'
 )
 logger = logging.getLogger()
+
+def log_valid_code_to_csv(code):
+    timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    try:
+        file_exists = os.path.isfile(CSV_LOG_FILE)
+        with open(CSV_LOG_FILE, mode='a', newline='') as csvfile:
+            writer = csv.writer(csvfile)
+            if not file_exists:
+                writer.writerow(["codigo", "timestamp"])
+            writer.writerow([code, timestamp])
+    except Exception as e:
+        logger.error(f"Erro ao registrar CSV: {e}")
 
 def start_game():
     if GPIO:
@@ -67,6 +82,7 @@ def process_code(code):
 
     if code in valids:
         logger.info(f"Código {code} válido.")
+        log_valid_code_to_csv(code)
         #valids.remove(code)
         #useds.append(code)
         #save_list(VALID_FILE, valids)
