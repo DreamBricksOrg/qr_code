@@ -3,30 +3,25 @@ import logging
 import time
 import threading
 from pathlib import Path
+
 try:
     import RPi.GPIO as GPIO
 except ImportError:
     GPIO = None
 
-MACHINE_COMMAND = 11 # Número do pino GPIO para o comando da máquina
-COMMAND_DURATION = 2  # Tempo em segundos para o comando ser executado
-USB_PATHS = [
-    "/media/pi",
-    "/mnt/usb",
-    "/mnt/d",
-    "/mnt/e",
-    "/mnt/f",
-    "/mnt/g",
-    "/mnt/h"
-]
+from evdev import InputDevice, categorize, ecodes, list_devices
+import select
+
+MACHINE_COMMAND = 22
+COMMAND_DURATION = 2
+USB_PATHS = ["/media/pi", "/mnt/usb", "/mnt/d", "/mnt/e", "/mnt/f", "/mnt/g", "/mnt/h"]
 VALID_FILE = "list_valids.txt"
 USED_FILE = "list_useds.txt"
 
-if GPIO:  # Verifica se a biblioteca RPi.GPIO está disponível para evitar erros em sistemas não-Raspberry Pi
+if GPIO:
     GPIO.setmode(GPIO.BCM)
     GPIO.setup(MACHINE_COMMAND, GPIO.OUT)
 
-# Configuração básica do logger
 logging.basicConfig(
     filename='scanner.log',
     level=logging.INFO,
@@ -38,7 +33,7 @@ logger = logging.getLogger()
 def start_game():
     if GPIO:
         GPIO.output(MACHINE_COMMAND, GPIO.HIGH)
-        time.sleep(COMMAND_DURATION)  # Aguarda o tempo definido para o comando
+        time.sleep(COMMAND_DURATION)
         GPIO.output(MACHINE_COMMAND, GPIO.LOW)
     else:
         logger.warning("GPIO não disponível. Comando não enviado.")
@@ -68,19 +63,17 @@ def process_code(code):
         return
 
     valids = read_list(VALID_FILE)
-    useds = read_list(USED_FILE)
+    #useds = read_list(USED_FILE)
 
     if code in valids:
         logger.info(f"Código {code} válido.")
-        valids.remove(code)
-        useds.append(code)
-        save_list(VALID_FILE, valids)
-        save_list(USED_FILE, useds)
+        #valids.remove(code)
+        #useds.append(code)
+        #save_list(VALID_FILE, valids)
+        #save_list(USED_FILE, useds)
         start_game()
-
-    elif code in useds:
-        logger.warning(f"Código {code} já foi usado.")
-
+    #elif code in useds:
+        #logger.warning(f"Código {code} já foi usado.")
     else:
         logger.error(f"Código {code} não encontrado nas listas.")
 
@@ -114,14 +107,55 @@ def usb_monitor():
             logger.error(f"Erro no monitor de USB: {e}")
             time.sleep(10)
 
+# --------- Captura de Teclado com evdev ---------
+typed_code = []
+
+def listen_keyboard_evdev():
+    devices = [InputDevice(path) for path in list_devices()]
+    scanner = None
+
+    for dev in devices:
+        if 'barcode' in dev.name.lower() or 'scanner' in dev.name.lower() or 'henex' in dev.name.lower():
+            scanner = dev
+            break
+
+    if not scanner:
+        logger.error("Scanner não encontrado.")
+        return
+
+    logger.info(f"Escutando scanner: {scanner.name} ({scanner.path})")
+
+    typed_code = []
+
+    while True:
+        r, _, _ = select.select([scanner], [], [])
+        for event in scanner.read():
+            if event.type == ecodes.EV_KEY:
+                key_event = categorize(event)
+                if key_event.keystate == key_event.key_down:
+                    keycode = key_event.keycode
+                    if isinstance(keycode, list):
+                        keycode = keycode[0]
+
+                    if keycode.startswith('KEY_'):
+                        char = keycode[4:]
+                        if char.isdigit():
+                            typed_code.append(char)
+                        elif char == 'ENTER':
+                            code_str = ''.join(typed_code)
+                            typed_code.clear()
+                            if code_str:
+                                print(f"\nCódigo lido: {code_str}")
+                                process_code(code_str)
+
+# --------------------------------------------------
+
 def main():
-    logger.info("Sistema iniciado. Aguardando QR Codes...")
-    print("\nInciando...")
+    logger.info("Sistema iniciado. Escutando teclado evdev...")
+    print("\nSistema pronto. Escaneie ou digite o código (pressione Enter para enviar)...")
     while True:
         try:
-            code = input("Digite ou escaneie o código: ").strip()
-            print(f"\nCode: {code}")
-            process_code(code)
+            time.sleep(1)
         except KeyboardInterrupt:
             logger.info("Sistema finalizado manualmente.")
             print("\nEncerrando...")
@@ -130,5 +164,6 @@ def main():
             logger.error(f"Erro inesperado no loop principal: {e}")
 
 if __name__ == "__main__":
-    threading.Thread(target=usb_monitor, daemon=True).start() # Inicia o monitoramento do USB em paralelo
+    threading.Thread(target=usb_monitor, daemon=True).start()
+    threading.Thread(target=listen_keyboard_evdev, daemon=True).start()
     main()
