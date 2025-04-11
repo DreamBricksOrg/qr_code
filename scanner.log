@@ -52,3 +52,6 @@
 2025-04-07 16:57:11 [WARNING] GPIO não disponível. Comando não enviado.
 2025-04-07 16:57:21 [ERROR] Código 921264983374038 inválido por verificação.
 2025-04-07 16:57:32 [ERROR] Código 921264983374038 inválido por verificação.
+2025-04-11 11:13:15 [INFO] Monitor de USB iniciado.
+2025-04-11 11:13:15 [INFO] Sistema iniciado. Escutando teclado evdev...
+2025-04-11 11:13:43 [INFO] Sistema finalizado manualmente.

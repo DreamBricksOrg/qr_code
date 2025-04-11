@@ -80,16 +80,16 @@ def process_code(code):
     valids = read_list(VALID_FILE)
     useds = read_list(USED_FILE)
 
-    if code in valids:
+    if code in useds:
+        logger.warning(f"Código {code} já foi usado.")
+    elif code in valids:
         logger.info(f"Código {code} válido.")
         log_valid_code_to_csv(code)
-        valids.remove(code)
+        #valids.remove(code)
         useds.append(code)
-        save_list(VALID_FILE, valids)
+        #save_list(VALID_FILE, valids)
         save_list(USED_FILE, useds)
         start_game()
-    elif code in useds:
-        logger.warning(f"Código {code} já foi usado.")
     else:
         logger.error(f"Código {code} não encontrado nas listas.")
 
@@ -98,9 +98,8 @@ def process_new_list(path):
         new_codes = [line.strip() for line in f if line.strip()]
     if new_codes:
         logger.info(f"Adicionando {len(new_codes)} itens da nova lista.")
-        valids = read_list(VALID_FILE)
-        updateds = list(set(valids + new_codes))
-        save_list(VALID_FILE, updateds)
+        updates = list(set(new_codes))
+        save_list(VALID_FILE, updates)
         os.remove(path)
 
 def usb_monitor():
